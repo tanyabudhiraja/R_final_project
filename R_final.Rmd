@@ -1,6 +1,31 @@
 ---
 title: "R_final"
-output: pdf_document
+author: Tanya Budhiraja
 date: "2025-07-10"
 ---
-hello
+```{r}
+
+genes <- read.csv("~/Desktop/QBS103_GSE157103_genes.csv", row.names = 1)
+# i am choosing gene: ABHD5 (row 97)
+#continuous covariate: Age
+#categorical covariates: sex & ICU status
+metadata <- read.csv("~/Desktop/QBS103_GSE157103_series_matrix-1.csv")
+
+head(genes)
+head(metadata)
+
+
+```
+```{r}
+#estract my gene's row from the gene df 
+gene_97_expr <- as.numeric(genes[97, ])
+
+ABHD5 <- rownames(genes)[97]
+
+metadata[[ABHD5]] <- gene_97_expr
+
+head(metadata)
+
+
+```
+
