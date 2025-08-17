@@ -6,11 +6,11 @@ output: pdf_document
 ---
 import data
 ```{r}
-genes <- read.csv("~/Desktop/QBS103_GSE157103_genes.csv", row.names = 1)
+genes <- read.csv("QBS103_GSE157103_genes.csv", row.names = 1)
 # i am choosing gene: ABHD5 (row 97)
 #continuous covariate: Age
 #categorical covariates: sex & ICU status
-metadata <- read.csv("~/Desktop/QBS103_GSE157103_series_matrix-1.csv")
+metadata <- read.csv("QBS103_GSE157103_series_matrix-1.csv")
 #head(genes)
 #head(metadata)
 ```

@@ -6,8 +6,8 @@ date: "2025-07-19"
 import
 ```{r}
 library(ggplot2) #import lib
-genes <- read.csv("~/Desktop/QBS103_GSE157103_genes.csv", row.names = 1)
-metadata <- read.csv("~/Desktop/QBS103_GSE157103_series_matrix-1.csv")
+genes <- read.csv("QBS103_GSE157103_genes.csv", row.names = 1)
+metadata <- read.csv("QBS103_GSE157103_series_matrix-1.csv")
 ```
 
 to make 3 plots
@@ -71,9 +71,9 @@ plot_all_figures <- function(metadata, gene_name, cont_var, cat_var1, cat_var2) 
 ```
 
 
-plot genes
+plot my gene from the first assignment: ABDH5
 ```{r}
-genes_to_plot <- c("ABHD4", "ABHD5", "ABHD6")
+genes_to_plot <- c("ABHD5")
 
 for (gene in genes_to_plot) {
   plot_all_figures(metadata, gene_name = gene, cont_var = "age", cat_var1 = "sex", cat_var2 = "icu_status")

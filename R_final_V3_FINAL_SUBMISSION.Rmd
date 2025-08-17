@@ -3,11 +3,107 @@ title: "R_final_V3_FINAL_SUBMISSION"
 output: pdf_document
 date: "2025-08-16"
 ---
-plot genes
+import
 ```{r}
-genes_to_plot <- c("ABHD4", "ABHD5", "ABHD6")
+library(ggplot2) #import lib
+genes <- read.csv("QBS103_GSE157103_genes.csv", row.names = 1)
+metadata <- read.csv("QBS103_GSE157103_series_matrix-1.csv")
+```
+
+Generate summary statistics table
+```{r}
+Generate a table formatted in LaTeX of summary statistics for all the covariates you looked at and 2 additional continuous (3 total) and 1 additional categorical variable (3 total). (5 pts)
+Stratifying by one of your categorical variables
+Tables should report n (%) for categorical variables
+Tables should report mean (sd) or median [IQR] for continuous variables
+```
+
+
+redefining the plotting function to generate publication ready plots
+```{r}
+plot_all_figures <- function(metadata, gene_name, cont_var, cat_var1, cat_var2) {
+  
+  temp <- metadata  # make a copy
+  temp[[gene_name]] <- as.numeric(genes[gene_name, ])
+  
+  # remove row wehre age is : and convert >89 to 90
+  #trim whitespace to be able to find : 
+  #from  https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/trimws
+  metadata <- metadata[trimws(metadata[[cont_var]]) != ":", ]
+  temp[[cont_var]][temp[[cont_var]] == ">89"] <- "90"
+  
+  # convert age to numeric
+  temp[[cont_var]] <- as.numeric(temp[[cont_var]])
+  
+  # filter out rows with missing values
+  metadata_clean <- temp[ !(is.na(temp[[cont_var]]) | is.na(temp[[gene_name]])), ]
+  metadata_clean <- metadata_clean[metadata_clean[[cat_var1]] != " unknown", ]
+
+
+
+  #histogram for gene expression 
+  print(
+    ggplot(metadata_clean, aes_string(x = gene_name)) +
+      geom_histogram(bins = 50, fill = "pink", color = "black") +
+      scale_x_continuous(breaks = seq(0, 190, by = 10)) +
+      scale_y_continuous(breaks = seq(0, 10, by = 1)) +
+      labs(title = paste("Histogram of", gene_name, "Expression"),
+           x = paste(gene_name, "Expression Level"),
+           y = "Frequency")
+  )
+
+  #scatterplot
+  print(
+    ggplot(metadata_clean, aes_string(x = cont_var, y = gene_name)) +
+      scale_x_continuous(breaks = seq(10, 100, by = 10)) +
+      scale_y_continuous(breaks = seq(0, 200, by = 10)) +
+      geom_point(size = 2, colour = "pink", alpha = 0.8) +
+      labs(title = paste(gene_name, "Expression vs. Age"),
+           x = "Age (years)",
+           y = paste(gene_name, "Expression Level"))
+  )
+
+  #boxplot
+  print(
+    ggplot(metadata_clean, aes_string(x = cat_var2, y = gene_name, fill = cat_var1)) +
+      geom_boxplot() +
+      scale_fill_manual(values = c(" female" = "pink", " male" = "deeppink")) +
+      labs(title = paste(gene_name, "Expression by ICU Status and Sex" ),
+           x = "ICU Status",
+           y = paste(gene_name, "Expression Level"),
+           fill = "Sex") +
+      scale_y_continuous(breaks = seq(0, 200, by = 20))
+  )
+}
+
+
+```
+
+
+plot my gene from the first assignment: ABDH5
+```{r}
+genes_to_plot <- c("ABHD5")
 
 for (gene in genes_to_plot) {
   plot_all_figures(metadata, gene_name = gene, cont_var = "age", cat_var1 = "sex", cat_var2 = "icu_status")
 }
 ```
+
+
+generating a heatmap
+```{r}
+Generate a heatmap (5 pts)
+Heatmap should include at least 10 genes
+Include tracking bars for the 2 categorical covariates in your boxplot
+Heatmaps should include clustered rows and columns
+```
+
+
+
+generating a novel plot
+```{r}
+
+
+Going through the documentation for ggplot2, generate a plot type that we did not previously discuss in class that describes your data in a new and unique way (5 pts) 
+```
+
