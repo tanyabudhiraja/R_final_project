@@ -10,13 +10,6 @@ genes <- read.csv("QBS103_GSE157103_genes.csv", row.names = 1)
 metadata <- read.csv("QBS103_GSE157103_series_matrix-1.csv")
 ```
 
-Generate summary statistics table
-```{r}
-Generate a table formatted in LaTeX of summary statistics for all the covariates you looked at and 2 additional continuous (3 total) and 1 additional categorical variable (3 total). (5 pts)
-Stratifying by one of your categorical variables
-Tables should report n (%) for categorical variables
-Tables should report mean (sd) or median [IQR] for continuous variables
-```
 
 
 redefining the plotting function to generate publication ready plots
@@ -79,6 +72,45 @@ plot_all_figures <- function(metadata, gene_name, cont_var, cat_var1, cat_var2) 
 
 ```
 
+
+
+Generate summary statistics table
+```{r}
+library(dplyr)
+library(tableone)
+#extract my genes row from the gene df and add to metadata
+metadata$ABHD5 <- as.numeric(genes["ABHD5", ])
+metadata$ventilator.free_days <- as.numeric(metadata$ventilator.free_days)
+metadata$ferritin.ng.ml. <- as.numeric(metadata$ferritin.ng.ml.)
+metadata$age <- as.numeric(metadata$age)
+#clean
+metadata_clean <- metadata %>%
+  filter(!is.na(age) & !is.na(ferritin.ng.ml.) & !is.na(ventilator.free_days) &
+         !is.na(sex) & !is.na(icu_status))
+
+# vector of variable names
+vars <- c("age", "ventilator.free_days", "ferritin.ng.ml.")
+# categorical vars
+catVars <- c("sex", "icu_status", "mechanical_ventilation")
+
+# table
+table1 <- CreateTableOne(vars = vars, strata = "icu_status", data = metadata_clean, 
+                         factorVars = catVars)
+#https://www.rdocumentation.org/packages/tableone/versions/0.13.2/topics/CreateTableOne
+#used the function from the table one package to 
+#summarize the variables I specified and stratify by icu status
+print(table1)
+
+summary <- metadata_clean %>%
+  group_by(icu_status, sex) %>% #group data by icu status and sex
+  #https://www.rdocumentation.org/packages/dplyr/versions/1.0.10/topics/group_by
+  summarise(n = n(), .groups = "drop") %>% #count rows that match groups
+  #https://www.rdocumentation.org/packages/dplyr/versions/0.7.8/topics/summarise
+  group_by(icu_status) %>% #regroup again only by icu status 
+  mutate(percent = round(100 * n / sum(n), 1)) #gets percent of total pop. 
+
+print(summary)
+```
 
 plot my gene from the first assignment: ABDH5
 ```{r}
