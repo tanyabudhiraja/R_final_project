@@ -3,6 +3,7 @@ title: "R_final_V3_FINAL_SUBMISSION"
 output: pdf_document
 date: "2025-08-16"
 ---
+
 import
 ```{r}
 library(ggplot2) #import lib
@@ -11,8 +12,7 @@ metadata <- read.csv("QBS103_GSE157103_series_matrix-1.csv")
 ```
 
 
-
-redefining the plotting function to generate publication ready plots
+redefining the plotting function from v2 to generate publication ready plots
 ```{r}
 plot_all_figures <- function(metadata, gene_name, cont_var, cat_var1, cat_var2) {
   
@@ -31,7 +31,6 @@ plot_all_figures <- function(metadata, gene_name, cont_var, cat_var1, cat_var2) 
   # filter out rows with missing values
   metadata_clean <- temp[ !(is.na(temp[[cont_var]]) | is.na(temp[[gene_name]])), ]
   metadata_clean <- metadata_clean[metadata_clean[[cat_var1]] != " unknown", ]
-
 
 
   #histogram for gene expression 
@@ -73,16 +72,17 @@ plot_all_figures <- function(metadata, gene_name, cont_var, cat_var1, cat_var2) 
 ```
 
 
-
 Generate summary statistics table
 ```{r}
 library(dplyr)
 library(tableone)
+
 #extract my genes row from the gene df and add to metadata
 metadata$ABHD5 <- as.numeric(genes["ABHD5", ])
 metadata$ventilator.free_days <- as.numeric(metadata$ventilator.free_days)
 metadata$ferritin.ng.ml. <- as.numeric(metadata$ferritin.ng.ml.)
 metadata$age <- as.numeric(metadata$age)
+
 #clean
 metadata_clean <- metadata %>%
   filter(!is.na(age) & !is.na(ferritin.ng.ml.) & !is.na(ventilator.free_days) &
@@ -90,12 +90,13 @@ metadata_clean <- metadata %>%
 
 # vector of variable names
 vars <- c("age", "ventilator.free_days", "ferritin.ng.ml.")
+
 # categorical vars
 catVars <- c("sex", "icu_status", "mechanical_ventilation")
 
 # table
-table1 <- CreateTableOne(vars = vars, strata = "icu_status", data = metadata_clean, 
-                         factorVars = catVars)
+table1 <- CreateTableOne(vars = vars, strata = "icu_status", data = metadata_clean, factorVars = catVars)
+
 #https://www.rdocumentation.org/packages/tableone/versions/0.13.2/topics/CreateTableOne
 #used the function from the table one package to 
 #summarize the variables I specified and stratify by icu status
@@ -124,18 +125,60 @@ for (gene in genes_to_plot) {
 
 generating a heatmap
 ```{r}
-Generate a heatmap (5 pts)
-Heatmap should include at least 10 genes
-Include tracking bars for the 2 categorical covariates in your boxplot
-Heatmaps should include clustered rows and columns
+library(pheatmap)
+
+# 10 genes 
+gene_list <- c("ABHD17C", "ABHD18", "ABHD2" , "ABHD3", "ABHD4",
+  "ABHD5", "ABHD6", "ABHD8", "ABI1", "ABI2")
+
+# expression matrix
+expr_mat <- as.matrix(apply(genes[gene_list, , drop = FALSE], 2, as.numeric)) #extract the 10 genes i picked
+rownames(expr_mat) <- gene_list #labels with gene names
+
+# tracking bars
+bars <- data.frame(
+  sex = factor(trimws(as.character(metadata$sex))),
+  icu_status = factor(trimws(as.character(metadata$icu_status)))
+)
+how to use matrix()
+#https://www.datamentor.io/r-programming/matrix#google_vignette
+
+#make tracking bars corresponding to icu status and sex 
+rownames(bars) <- colnames(expr_mat)   # making sure things align
+
+#how to use pheatmap 
+#https://biostatsquid.com/step-by-step-heatmap-tutorial-with-pheatmap/
+# heatmap
+pheatmap(expr_mat,#data from expressio matrix 
+         scale = "row",
+         annotation_col = bars, #add tracking bars
+         cluster_rows = TRUE, #cluster 
+         cluster_cols = TRUE, #cluster
+         show_colnames = FALSE) #hide sample names
+ 
 ```
 
 
 
 generating a novel plot
 ```{r}
+abhd5 <- as.numeric(genes["ABHD5", ])
 
+df <- data.frame(
+  expr       = abhd5,
+  icu_status = factor(trimws(as.character(metadata$icu_status))),
+  sex        = factor(trimws(as.character(metadata$sex)))
+)
 
-Going through the documentation for ggplot2, generate a plot type that we did not previously discuss in class that describes your data in a new and unique way (5 pts) 
+library(ggplot2)
+
+# example "new" plot: violin + boxplot overlay
+ggplot(df, aes(x = icu_status, y = expr, fill = icu_status)) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width = 0.1, fill = "white") +
+  scale_fill_manual(values = c("no" = "pink", "yes" = "hotpink"))
+  labs(x = "ICU status", y = "ABHD5 expression") +
+  theme_minimal()
+
 ```
 
