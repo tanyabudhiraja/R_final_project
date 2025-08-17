@@ -1,0 +1,13 @@
+---
+title: "R_final_V3_FINAL_SUBMISSION"
+output: pdf_document
+date: "2025-08-16"
+---
+plot genes
+```{r}
+genes_to_plot <- c("ABHD4", "ABHD5", "ABHD6")
+
+for (gene in genes_to_plot) {
+  plot_all_figures(metadata, gene_name = gene, cont_var = "age", cat_var1 = "sex", cat_var2 = "icu_status")
+}
+```
