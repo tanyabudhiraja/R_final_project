@@ -6,7 +6,7 @@ date: "2025-08-16"
 
 import
 ```{r}
-library(ggplot2) #import lib
+library(ggplot2) #import lib and data
 genes <- read.csv("QBS103_GSE157103_genes.csv", row.names = 1)
 metadata <- read.csv("QBS103_GSE157103_series_matrix-1.csv")
 ```
@@ -88,38 +88,36 @@ metadata_clean <- metadata %>%
   filter(!is.na(age) & !is.na(ferritin.ng.ml.) & !is.na(ventilator.free_days) &
          !is.na(sex) & !is.na(icu_status))
 
-# vector of variable names
-vars <- c("age", "ventilator.free_days", "ferritin.ng.ml.")
+contVars <- c("age", "ventilator.free_days", "ferritin.ng.ml.")
+catVars <- c("sex", "mechanical_ventilation", "icu_status")
 
-# categorical vars
-catVars <- c("sex", "icu_status", "mechanical_ventilation")
+vars <- c(contVars, catVars)
 
-# table
-table1 <- CreateTableOne(vars = vars, strata = "icu_status", data = metadata_clean, factorVars = catVars)
+table1 <- CreateTableOne(
+  vars = vars,
+  strata = "icu_status",        # stratify by icu status
+  data = metadata_clean,
+  factorVars = catVars
+)
 
-#https://www.rdocumentation.org/packages/tableone/versions/0.13.2/topics/CreateTableOne
-#used the function from the table one package to 
-#summarize the variables I specified and stratify by icu status
-print(table1)
 
-summary <- metadata_clean %>%
-  group_by(icu_status, sex) %>% #group data by icu status and sex
-  #https://www.rdocumentation.org/packages/dplyr/versions/1.0.10/topics/group_by
-  summarise(n = n(), .groups = "drop") %>% #count rows that match groups
-  #https://www.rdocumentation.org/packages/dplyr/versions/0.7.8/topics/summarise
-  group_by(icu_status) %>% #regroup again only by icu status 
-  mutate(percent = round(100 * n / sum(n), 1)) #gets percent of total pop. 
+print(table1,
+      nonnormal = c("ferritin.ng.ml."),   
+      quote = FALSE,
+      noSpaces = TRUE,
+      test = TRUE)            
 
-print(summary)
 ```
 
 plot my gene from the first assignment: ABDH5
 ```{r}
 genes_to_plot <- c("ABHD5")
-
+#plot
 for (gene in genes_to_plot) {
-  plot_all_figures(metadata, gene_name = gene, cont_var = "age", cat_var1 = "sex", cat_var2 = "icu_status")
+  plot_all_figures(metadata, gene_name = gene, cont_var = "age", cat_var1 = "sex"
+                   , cat_var2 = "icu_status")
 }
+
 ```
 
 
@@ -132,7 +130,8 @@ gene_list <- c("ABHD17C", "ABHD18", "ABHD2" , "ABHD3", "ABHD4",
   "ABHD5", "ABHD6", "ABHD8", "ABI1", "ABI2")
 
 # expression matrix
-expr_mat <- as.matrix(apply(genes[gene_list, , drop = FALSE], 2, as.numeric)) #extract the 10 genes i picked
+expr_mat <- as.matrix(apply(genes[gene_list, , drop = FALSE], 2, as.numeric)) 
+#extract the 10 genes i picked
 rownames(expr_mat) <- gene_list #labels with gene names
 
 # tracking bars
@@ -140,7 +139,11 @@ bars <- data.frame(
   sex = factor(trimws(as.character(metadata$sex))),
   icu_status = factor(trimws(as.character(metadata$icu_status)))
 )
-how to use matrix()
+
+#change names of labels
+colnames(bars) <- c("ICU Status", "Sex")
+
+#how to use matrix()
 #https://www.datamentor.io/r-programming/matrix#google_vignette
 
 #make tracking bars corresponding to icu status and sex 
@@ -149,10 +152,12 @@ rownames(bars) <- colnames(expr_mat)   # making sure things align
 #how to use pheatmap 
 #https://biostatsquid.com/step-by-step-heatmap-tutorial-with-pheatmap/
 # heatmap
-pheatmap(expr_mat,#data from expressio matrix 
+pheatmap(expr_mat,#data from expression matrix 
          scale = "row",
+         main = paste( "Gene Expression Heatmap Stratified by 
+                            ICU Status and Sex" ),
          annotation_col = bars, #add tracking bars
-         cluster_rows = TRUE, #cluster 
+         cluster_rows = TRUE,clustering_distance_rows = "euclidean", #cluster 
          cluster_cols = TRUE, #cluster
          show_colnames = FALSE) #hide sample names
  
@@ -162,23 +167,32 @@ pheatmap(expr_mat,#data from expressio matrix
 
 generating a novel plot
 ```{r}
-abhd5 <- as.numeric(genes["ABHD5", ])
-
-df <- data.frame(
-  expr       = abhd5,
-  icu_status = factor(trimws(as.character(metadata$icu_status))),
-  sex        = factor(trimws(as.character(metadata$sex)))
-)
-
 library(ggplot2)
+library(ggridges)
+df <- data.frame( #make df
+  expr = as.numeric(genes["ABHD5", ]), #get gene row
+  icu_status = factor(trimws(metadata$icu_status), levels = #get icu status
+                        c("no","yes")),
+  sex = factor(trimws(metadata$sex), levels = c("female","male"))
+  #get sex
+)
+df_clean <- subset(df, !is.na(expr) & sex != "unknown" & !is.na(icu_status))
 
-# example "new" plot: violin + boxplot overlay
-ggplot(df, aes(x = icu_status, y = expr, fill = icu_status)) +
-  geom_violin(trim = FALSE) +
-  geom_boxplot(width = 0.1, fill = "white") +
-  scale_fill_manual(values = c("no" = "pink", "yes" = "hotpink"))
-  labs(x = "ICU status", y = "ABHD5 expression") +
+
+#plot 
+#ridgeline plot = stacked density plot
+ggplot(df_clean, aes(x = expr, y = icu_status, fill = icu_status)) +
+  geom_density_ridges(alpha = 0.7) +
+  facet_wrap(~ sex) +
+  scale_fill_manual(values = c("no" = "pink", "yes" = "hotpink")) +
+  labs(
+    x = "ABHD5 Expression",
+    y = "ICU Status",
+    title = "Ridgeline plot of ABHD5 expression by ICU status"
+  ) +
   theme_minimal()
-
+#analysis
+#In both sexes patients with ICU “yes” status show greater variability in
+#ABHD5 expression compared to ICU “no.” 
 ```
 

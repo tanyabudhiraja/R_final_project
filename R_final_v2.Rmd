@@ -71,9 +71,9 @@ plot_all_figures <- function(metadata, gene_name, cont_var, cat_var1, cat_var2) 
 ```
 
 
-plot my gene from the first assignment: ABDH5
+plot genes
 ```{r}
-genes_to_plot <- c("ABHD5")
+genes_to_plot <- c("ABHD4","ABHD5","ABHD6")
 
 for (gene in genes_to_plot) {
   plot_all_figures(metadata, gene_name = gene, cont_var = "age", cat_var1 = "sex", cat_var2 = "icu_status")
