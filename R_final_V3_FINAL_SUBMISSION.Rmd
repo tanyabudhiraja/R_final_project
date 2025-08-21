@@ -184,7 +184,9 @@ df_clean <- subset(df, !is.na(expr) & sex != "unknown" & !is.na(icu_status))
 ggplot(df_clean, aes(x = expr, y = icu_status, fill = icu_status)) +
   geom_density_ridges(alpha = 0.7) +
   facet_wrap(~ sex) +
-  scale_fill_manual(values = c("no" = "pink", "yes" = "hotpink")) +
+  scale_fill_manual(values = c("no" = "pink", "yes" = "hotpink"),
+                    name = "Icu Status") +
+  
   labs(
     x = "ABHD5 Expression",
     y = "ICU Status",
