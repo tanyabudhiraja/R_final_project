@@ -1,6 +1,8 @@
 ---
 title: "R_final_V3_FINAL_SUBMISSION"
-output: pdf_document
+output:
+  pdf_document: default
+  word_document: default
 date: "2025-08-16"
 ---
 
